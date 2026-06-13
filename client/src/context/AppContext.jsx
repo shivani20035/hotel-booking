@@ -24,16 +24,12 @@ export const AppProvider = ({ children }) => {
     const fetchRooms = async () => {
         try {
             const { data } = await axios.get('/api/rooms');
-
-            console.log("Rooms API:", data);
-
             if (data.success) {
                 setRooms(data.rooms);
             } else {
                 toast.error(data.message);
             }
         } catch (error) {
-            console.log("Rooms Error:", error);
             toast.error(error.message);
         }
     };
@@ -42,7 +38,10 @@ export const AppProvider = ({ children }) => {
         try {
             const token = await getToken();
 
-            console.log("Token:", token);
+            if (!token) {
+                setTimeout(() => fetchUser(), 3000);
+                return;
+            }
 
             const { data } = await axios.get('/api/user', {
                 headers: {
@@ -50,30 +49,20 @@ export const AppProvider = ({ children }) => {
                 }
             });
 
-            console.log("API Response:", data);
-
             if (data.success) {
-
-                console.log("Role:", data.role);
-
                 setIsOwner(data.role === "hotelOwner");
                 setSearchedCities(data.recentSearchedCities || []);
-
             } else {
-                setTimeout(() => {
-                    fetchUser();
-                }, 5000);
+                setTimeout(() => fetchUser(), 5000);
             }
 
         } catch (error) {
             console.log("Fetch User Error:", error);
-            toast.error(error.message);
         }
     };
 
     useEffect(() => {
         if (user) {
-            console.log("Clerk User:", user);
             fetchUser();
         }
     }, [user]);
@@ -81,13 +70,6 @@ export const AppProvider = ({ children }) => {
     useEffect(() => {
         fetchRooms();
     }, []);
-
-    // DEBUG LOGS
-    useEffect(() => {
-        console.log("Current User:", user);
-        console.log("Current isOwner:", isOwner);
-        console.log("Current searchedCities:", searchedCities);
-    }, [user, isOwner, searchedCities]);
 
     const value = {
         currency,
